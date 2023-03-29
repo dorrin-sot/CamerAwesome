@@ -64,7 +64,13 @@ class ImageAnalysisBuilder private constructor(
     @SuppressLint("RestrictedApi")
     fun build(): ImageAnalysis {
         countDownLatch.reset()
-        val imageAnalysis = ImageAnalysis.Builder().setTargetResolution(Size(width, height))
+        val resolution = Size(640, 480)
+        val resolution4K = Size(2160, 3840)
+        val resolution2K = Size(2560, 1440)
+        val resolutionFullHD = Size(1920, 1080)
+
+        Log.i("flutter", "ImageAnalysisBuilder: imageSize = ${Size(height, width)}")
+        val imageAnalysis = ImageAnalysis.Builder().setTargetResolution(resolution4K)
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
             .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888).build()
         imageAnalysis.setAnalyzer(Dispatchers.IO.asExecutor()) { imageProxy ->

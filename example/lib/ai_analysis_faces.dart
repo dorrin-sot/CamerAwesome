@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:better_open_file/better_open_file.dart';
 import 'package:camera_app/utils/file_utils.dart';
 import 'package:camerawesome/camerawesome_plugin.dart';
 import 'package:camerawesome/pigeon.dart';
@@ -45,11 +44,10 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> {
   final _faceDetectionController = BehaviorSubject<FaceDetectionModel>();
 
-  final options = FaceDetectorOptions(
-    enableContours: true,
-    enableClassification: true,
-  );
+  final options = FaceDetectorOptions(enableContours: true);
   late final faceDetector = FaceDetector(options: options);
+
+  Size? imageSize;
 
   @override
   void deactivate() {
@@ -72,22 +70,35 @@ class _CameraPageState extends State<CameraPage> {
           videoPathBuilder: () => path(CaptureMode.video),
           initialCaptureMode: CaptureMode.photo,
         ),
-        onMediaTap: (mediaCapture) => OpenFile.open(mediaCapture.filePath),
         previewFit: CameraPreviewFit.contain,
-        aspectRatio: CameraAspectRatios.ratio_1_1,
+        aspectRatio: CameraAspectRatios.ratio_16_9,
         sensor: Sensors.front,
         onImageForAnalysis: (img) => _analyzeImage(img),
         imageAnalysisConfig: AnalysisConfig(
           outputFormat: InputAnalysisImageFormat.nv21,
-          width: 250,
-          maxFramesPerSecond: 30,
+          width: 3840,
+          maxFramesPerSecond: 10,
         ),
         previewDecoratorBuilder: (state, previewSize, previewRect) {
-          return _MyPreviewDecoratorWidget(
-            cameraState: state,
-            faceDetectionStream: _faceDetectionController,
-            previewSize: previewSize,
-            previewRect: previewRect,
+          return Stack(
+            children: [
+              Positioned(
+                top: 100,
+                left: 10,
+                child: Text(
+                  "$imageSize",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+              Positioned.fill(
+                child: _MyPreviewDecoratorWidget(
+                  cameraState: state,
+                  faceDetectionStream: _faceDetectionController,
+                  previewSize: previewSize,
+                  previewRect: previewRect,
+                ),
+              ),
+            ],
           );
         },
       ),
@@ -95,7 +106,10 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   Future _analyzeImage(AnalysisImage img) async {
-    final Size imageSize = Size(img.width.toDouble(), img.height.toDouble());
+    setState(() {
+      imageSize = Size(img.width.toDouble(), img.height.toDouble());
+    });
+    print("imageSize = $imageSize");
 
     final InputImageRotation imageRotation =
         InputImageRotation.values.byName(img.rotation.name);
@@ -113,7 +127,7 @@ class _CameraPageState extends State<CameraPage> {
     final InputImage inputImage;
     if (Platform.isIOS) {
       final inputImageData = InputImageData(
-        size: imageSize,
+        size: imageSize!,
         imageRotation: imageRotation, // FIXME: seems to be ignored on iOS...
         inputImageFormat: inputImageFormat(img.format),
         planeData: planeData,
